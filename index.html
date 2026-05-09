@@ -1,326 +1,409 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fleming Systems Terminal</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+<title>Fleming Systems Terminal</title>
 
-    html,
-    body {
-      background:
-        radial-gradient(circle at top, rgba(0,255,0,0.03), transparent 35%),
-        radial-gradient(circle at bottom, rgba(0,255,0,0.025), transparent 35%),
-        linear-gradient(to bottom, #010101 0%, #000000 100%);
-      color: #0f0;
-      font-family: 'Courier New', monospace;
-      text-shadow:
-        0 0 3px #0f0,
-        0 0 8px rgba(0,255,0,0.45),
-        0 0 16px rgba(0,255,0,0.15);
-      display: flex;
-      justify-content: center;
-      padding: 40px 20px 80px;
-      position: relative;
-      overflow-x: hidden;
-      overflow-y: auto;
-      animation: flicker 0.18s infinite;
-    }
+<style>
 
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      background: repeating-linear-gradient(
-        to bottom,
-        rgba(0,255,0,0.08) 0px,
-        rgba(0,255,0,0.08) 1px,
-        transparent 2px,
-        transparent 4px
-      );
-      opacity: 0.22;
-      mix-blend-mode: screen;
-      z-index: 1000;
-    }
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
 
-    body::after {
-      content: '';
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      background: linear-gradient(
-        rgba(255,255,255,0.04),
-        rgba(0,0,0,0.02)
-      );
-      opacity: 0.08;
-      animation: crtMove 6s linear infinite;
-      z-index: 999;
-    }
+html,
+body{
+  min-height:100vh;
 
-    .vignette {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      background: radial-gradient(circle at center, transparent 45%, rgba(0,0,0,0.65) 100%);
-      z-index: 998;
-    }
+  background:
+    radial-gradient(circle at top, rgba(0,255,0,0.03), transparent 35%),
+    radial-gradient(circle at bottom, rgba(0,255,0,0.025), transparent 35%),
+    linear-gradient(to bottom, #010101 0%, #000000 100%);
 
-    @keyframes crtMove {
-      from {
-        transform: translateY(-100%);
-      }
+  color:#0f0;
 
-      to {
-        transform: translateY(100%);
-      }
-    }
+  font-family:'Courier New', monospace;
 
-    @keyframes flicker {
-      0% {
-        opacity: 0.98;
-      }
+  text-shadow:
+    0 0 3px #0f0,
+    0 0 8px rgba(0,255,0,0.45),
+    0 0 16px rgba(0,255,0,0.15);
 
-      50% {
-        opacity: 1;
-      }
+  display:flex;
+  justify-content:center;
 
-      100% {
-        opacity: 0.985;
-      }
-    }
+  padding:40px 20px 80px;
 
-    @keyframes blink {
-      0%, 50% {
-        opacity: 1;
-      }
+  position:relative;
 
-      51%, 100% {
-        opacity: 0;
-      }
-    }
+  overflow-x:hidden;
+  overflow-y:auto;
 
-    .terminal {
-      width: 100%;
-      max-width: 900px;
-      position: relative;
-      z-index: 2;
-    }
+  animation:flicker .18s infinite;
+}
 
-    .content-wrapper {
-      position: relative;
-      display: flex;
-      justify-content: center;
-    }
+body::before{
+  content:'';
 
-    .content-inner {
-      white-space: pre-wrap;
-      line-height: 1.8;
-      font-size: 17px;
-      text-align: center;
-      width: fit-content;
-      max-width: 100%;
-      position: relative;
-      display: inline-block;
-    }
+  position:fixed;
+  inset:0;
 
-    #text {
-      display: inline;
-    }
+  pointer-events:none;
 
-    .cursor {
-      display: inline-block;
-      width: 10px;
-      height: 20px;
-      background: #0f0;
-      vertical-align: middle;
-      animation: blink 0.8s infinite;
-      margin-left: 2px;
-    }
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0,255,0,0.08) 0px,
+      rgba(0,255,0,0.08) 1px,
+      transparent 2px,
+      transparent 4px
+    );
 
-    .auth-terminal {
-      margin-top: 40px;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-    }
+  opacity:.22;
 
-    .auth-title {
-      font-size: 22px;
-      margin-bottom: 22px;
-      letter-spacing: 2px;
-    }
+  mix-blend-mode:screen;
 
-    .cmd-line {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      width: 700px;
-      max-width: 95%;
-      padding: 14px 18px;
-      border: 2px solid #0f0;
-      background: rgba(0,0,0,0.45);
-      box-shadow:
-        0 0 12px rgba(0,255,0,.5),
-        inset 0 0 18px rgba(0,255,0,.15);
-    }
+  z-index:1000;
+}
 
-    .prompt {
-      color: #0f0;
-      font-size: 22px;
-      white-space: nowrap;
-    }
+body::after{
+  content:'';
 
-    #terminalInput {
-      flex: 1;
-      background: transparent;
-      border: none;
-      outline: none;
-      color: #0f0;
-      font-family: 'Courier New', monospace;
-      font-size: 22px;
-      text-shadow:
-        0 0 4px #0f0,
-        0 0 10px rgba(0,255,0,0.7);
-      caret-color: #0f0;
-    }
+  position:fixed;
+  inset:0;
 
-    .attempts {
-      margin-top: 18px;
-      width: 100%;
-      text-align: center;
-      font-size: 12px;
-    }
+  pointer-events:none;
 
-    .success-screen,
-    .error-screen {
-      width: 100%;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      white-space: pre-wrap;
-      font-size: 30px;
-      flex-direction: column;
-      line-height: 2;
-    }
+  background:
+    linear-gradient(
+      rgba(255,255,255,0.04),
+      rgba(0,0,0,0.02)
+    );
 
-    .success-screen {
-      color: #0f0;
-      text-shadow: 0 0 12px #0f0;
-    }
+  opacity:.08;
 
-    .error-screen {
-      color: #ff2a2a;
-      text-shadow: 0 0 12px #ff0000;
-    }
+  animation:crtMove 6s linear infinite;
 
-    .flashbang {
-      position: fixed;
-      inset: 0;
-      background: white;
-      opacity: 0;
-      pointer-events: none;
-      z-index: 99999;
-    }
+  z-index:999;
+}
 
-    .static-screen {
-      position: fixed;
-      inset: 0;
-      background: repeating-linear-gradient(
-        0deg,
-        #888 0px,
-        #777 2px,
-        #666 4px,
-        #555 6px
-      );
-      opacity: 0;
-      z-index: 99998;
-      pointer-events: none;
-      animation: staticNoise 0.08s infinite;
-    }
+.vignette{
+  position:fixed;
+  inset:0;
 
-    @keyframes staticNoise {
-      0% {
-        transform: translateX(0);
-        filter: contrast(120%);
-      }
+  pointer-events:none;
 
-      25% {
-        transform: translateX(-2px);
-      }
+  background:
+    radial-gradient(
+      circle at center,
+      transparent 45%,
+      rgba(0,0,0,0.72) 100%
+    );
 
-      50% {
-        transform: translateX(2px);
-        filter: contrast(180%);
-      }
+  z-index:998;
+}
 
-      75% {
-        transform: translateY(1px);
-      }
+@keyframes crtMove{
+  from{
+    transform:translateY(-100%);
+  }
 
-      100% {
-        transform: translateY(-1px);
-      }
-    }
+  to{
+    transform:translateY(100%);
+  }
+}
 
-    @media (max-width: 768px) {
-      .content-inner {
-        font-size: 12px;
-        line-height: 1.6;
-      }
+@keyframes flicker{
+  0%{
+    opacity:.98;
+  }
 
-      .cmd-line {
-        flex-direction: column;
-        gap: 8px;
-      }
+  50%{
+    opacity:1;
+  }
 
-      .prompt,
-      #terminalInput {
-        font-size: 16px;
-      }
-    }
-  </style>
+  100%{
+    opacity:.985;
+  }
+}
+
+@keyframes blink{
+  0%,50%{
+    opacity:1;
+  }
+
+  51%,100%{
+    opacity:0;
+  }
+}
+
+@keyframes staticNoise{
+  0%{
+    transform:translateX(0);
+    filter:contrast(120%);
+  }
+
+  25%{
+    transform:translateX(-2px);
+  }
+
+  50%{
+    transform:translateX(2px);
+    filter:contrast(180%);
+  }
+
+  75%{
+    transform:translateY(1px);
+  }
+
+  100%{
+    transform:translateY(-1px);
+  }
+}
+
+.terminal{
+  width:100%;
+  max-width:900px;
+  position:relative;
+  z-index:2;
+}
+
+.content-wrapper{
+  display:flex;
+  justify-content:center;
+}
+
+.content-inner{
+  white-space:pre-wrap;
+  line-height:1.8;
+  font-size:17px;
+  text-align:center;
+  width:fit-content;
+  max-width:100%;
+  position:relative;
+  display:inline-block;
+}
+
+#text{
+  display:inline;
+}
+
+.cursor{
+  display:inline-block;
+  width:10px;
+  height:20px;
+  background:#0f0;
+  vertical-align:middle;
+  animation:blink .8s infinite;
+  margin-left:2px;
+}
+
+.auth-terminal{
+  margin-top:40px;
+  display:none;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+}
+
+.auth-title{
+  font-size:22px;
+  margin-bottom:22px;
+  letter-spacing:2px;
+}
+
+.cmd-line{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  width:700px;
+  max-width:95%;
+  padding:14px 18px;
+  border:2px solid #0f0;
+  background:rgba(0,0,0,0.45);
+
+  box-shadow:
+    0 0 12px rgba(0,255,0,.5),
+    inset 0 0 18px rgba(0,255,0,.15);
+}
+
+.prompt{
+  color:#0f0;
+  font-size:22px;
+  white-space:nowrap;
+}
+
+#terminalInput{
+  flex:1;
+  background:transparent;
+  border:none;
+  outline:none;
+  color:#0f0;
+  font-family:'Courier New', monospace;
+  font-size:22px;
+
+  text-shadow:
+    0 0 4px #0f0,
+    0 0 10px rgba(0,255,0,0.7);
+
+  caret-color:#0f0;
+}
+
+.attempts{
+  margin-top:18px;
+  width:100%;
+  text-align:center;
+  font-size:12px;
+}
+
+.flashbang{
+  position:fixed;
+  inset:0;
+  background:white;
+  opacity:0;
+  pointer-events:none;
+  z-index:100000;
+  transition:opacity .08s ease;
+}
+
+.static-screen{
+  position:fixed;
+  inset:0;
+
+  background:
+    repeating-linear-gradient(
+      0deg,
+      #888 0px,
+      #777 2px,
+      #666 4px,
+      #555 6px
+    );
+
+  opacity:0;
+
+  z-index:99998;
+
+  pointer-events:none;
+
+  animation:staticNoise .08s infinite;
+}
+
+.center-screen{
+  position:fixed;
+  inset:0;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  z-index:9999;
+
+  text-align:center;
+
+  padding:20px;
+}
+
+.screen-text{
+  white-space:pre-wrap;
+  line-height:2;
+  font-size:32px;
+}
+
+.success{
+  color:#00ff66;
+
+  text-shadow:
+    0 0 8px #00ff66,
+    0 0 18px rgba(0,255,0,.8);
+}
+
+.error{
+  color:#ff4040;
+
+  text-shadow:
+    0 0 8px #ff0000,
+    0 0 18px rgba(255,0,0,.8);
+}
+
+@media (max-width:768px){
+
+  .content-inner{
+    font-size:12px;
+    line-height:1.6;
+  }
+
+  .cmd-line{
+    flex-direction:column;
+    gap:8px;
+  }
+
+  .prompt,
+  #terminalInput{
+    font-size:16px;
+  }
+
+  .screen-text{
+    font-size:22px;
+  }
+}
+
+</style>
 </head>
+
 <body>
-  <div class="flashbang" id="flashbang"></div>
-  <div class="static-screen" id="staticScreen"></div>
-  <div class="vignette"></div>
 
-  <div class="terminal">
-    <div class="content-wrapper">
-      <div class="content-inner">
-        <span id="text"></span><span class="cursor" id="cursor"></span>
+<div class="flashbang" id="flashbang"></div>
+<div class="static-screen" id="staticScreen"></div>
+<div class="vignette"></div>
 
-        <div class="auth-terminal" id="authBox">
-          <div class="auth-title">CAMPO DE AUTENTICAÇÃO</div>
+<div class="terminal">
 
-          <div class="cmd-line">
-            <span class="prompt">C:\FLEMING\AUTH></span>
+<div class="content-wrapper">
 
-            <input type="text" maxlength="10" inputmode="numeric" id="terminalInput" autocomplete="off" spellcheck="false" aria-label="Senha do terminal">
-          </div>
+<div class="content-inner">
 
-          <div class="attempts" id="attemptsText">
-            [ SISTEMA ] TENTATIVAS RESTANTES: 3
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+<span id="text"></span>
+<span class="cursor" id="cursor"></span>
 
-  <script>
-    const terminalText = `
+<div class="auth-terminal" id="authBox">
+
+<div class="auth-title">
+CAMPO DE AUTENTICAÇÃO
+</div>
+
+<div class="cmd-line">
+
+<span class="prompt">
+C:\FLEMING\AUTH>
+</span>
+
+<input
+type="text"
+maxlength="10"
+inputmode="numeric"
+id="terminalInput"
+autocomplete="off"
+spellcheck="false">
+
+</div>
+
+<div class="attempts" id="attemptsText">
+[ SISTEMA ] TENTATIVAS RESTANTES: 3
+</div>
+
+</div>
+</div>
+</div>
+</div>
+
+<script>
+
+const terminalText = `
 ╔════════════════════════════════════════════════════════════╗
 ║                    FLEMING SYSTEMS INC.                   ║
 ║             DIVISÃO DE SEGURANÇA E CONTROLE DIGITAL       ║
@@ -382,228 +465,249 @@ SISTEMA AGUARDANDO AUTENTICAÇÃO
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 FLEMING SYSTEMS — INTERNAL USE ONLY
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`;
 
-    const correctPassword = '2201211242';
+const correctPassword = '2201211242';
 
-    const textElement = document.getElementById('text');
-    const cursor = document.getElementById('cursor');
-    const authBox = document.getElementById('authBox');
-    const attemptsText = document.getElementById('attemptsText');
-    const terminal = document.querySelector('.terminal');
-    const terminalInput = document.getElementById('terminalInput');
+const textElement = document.getElementById('text');
+const cursor = document.getElementById('cursor');
+const authBox = document.getElementById('authBox');
+const attemptsText = document.getElementById('attemptsText');
+const terminalInput = document.getElementById('terminalInput');
 
-    let currentIndex = 0;
-    let attempts = 3;
-    let typingFinished = false;
+let currentIndex = 0;
+let attempts = 3;
+let typingFinished = false;
 
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+function typeWriter(){
 
-    function playKeySound() {
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
+  if(currentIndex >= terminalText.length){
 
-      oscillator.type = 'square';
-      oscillator.frequency.setValueAtTime(700 + Math.random() * 120, audioContext.currentTime);
+    typingFinished = true;
 
-      gainNode.gain.setValueAtTime(0.006, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.03);
+    authBox.style.display = 'flex';
 
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
+    cursor.style.display = 'none';
 
-      oscillator.start();
-      oscillator.stop(audioContext.currentTime + 0.03);
-    }
+    terminalInput.focus();
 
-    function playSuccessSound() {
-      [520, 660, 880].forEach((frequency, index) => {
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
+    return;
+  }
 
-        oscillator.type = 'sine';
-        oscillator.frequency.value = frequency;
+  const character = terminalText[currentIndex];
 
-        gainNode.gain.setValueAtTime(0.015, audioContext.currentTime + index * 0.12);
-        gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + index * 0.12 + 0.2);
+  textElement.textContent += character;
 
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
+  currentIndex++;
 
-        oscillator.start(audioContext.currentTime + index * 0.12);
-        oscillator.stop(audioContext.currentTime + index * 0.12 + 0.2);
-      });
-    }
+  const delay = character === '\n' ? 42 : 9;
 
-    function playErrorSound() {
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
+  setTimeout(typeWriter, delay);
+}
 
-      oscillator.type = 'sawtooth';
-      oscillator.frequency.setValueAtTime(140, audioContext.currentTime);
+typeWriter();
 
-      gainNode.gain.setValueAtTime(0.02, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.6);
+terminalInput.addEventListener('input',()=>{
 
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
+  terminalInput.value =
+    terminalInput.value.replace(/\D/g,'');
 
-      oscillator.start();
-      oscillator.stop(audioContext.currentTime + 0.6);
-    }
+});
 
-    function typeWriter() {
-      if (currentIndex >= terminalText.length) {
-        typingFinished = true;
-        authBox.style.display = 'flex';
-        cursor.style.display = 'none';
-        terminalInput.focus();
-        return;
+terminalInput.addEventListener('keydown',(event)=>{
+
+  if(event.key === 'Enter'){
+    validatePassword();
+  }
+
+});
+
+function validatePassword(){
+
+  if(!typingFinished){
+    return;
+  }
+
+  const enteredPassword =
+    terminalInput.value.trim();
+
+  if(enteredPassword === correctPassword){
+
+    showSuccessScreen();
+
+    return;
+  }
+
+  attempts--;
+
+  if(attempts <= 0){
+
+    showErrorScreen();
+
+    return;
+  }
+
+  attemptsText.textContent =
+    `[ SISTEMA ] TENTATIVAS RESTANTES: ${attempts}`;
+
+  terminalInput.value = '';
+}
+
+function clearTerminal(){
+
+  document.querySelector('.terminal').innerHTML = '';
+}
+
+function typeCenterMessage(lines,className,callback){
+
+  clearTerminal();
+
+  const container =
+    document.createElement('div');
+
+  container.className =
+    `center-screen ${className}`;
+
+  const text =
+    document.createElement('div');
+
+  text.className = 'screen-text';
+
+  container.appendChild(text);
+
+  document.body.appendChild(container);
+
+  let finalText = '';
+  let lineIndex = 0;
+  let charIndex = 0;
+
+  function write(){
+
+    if(lineIndex >= lines.length){
+
+      if(callback){
+        callback(container,text);
       }
 
-      const character = terminalText[currentIndex];
-
-      textElement.textContent += character;
-
-      if (character !== '\n' && character !== ' ') {
-        playKeySound();
-      }
-
-      currentIndex++;
-
-      window.scrollTo(0, document.body.scrollHeight);
-
-      const delay = character === '\n' ? 42 : 9;
-
-      setTimeout(typeWriter, delay);
+      return;
     }
 
-    typeWriter();
+    const currentLine = lines[lineIndex];
 
-    terminalInput.addEventListener('input', () => {
-      terminalInput.value = terminalInput.value.replace(/\D/g, '');
-    });
+    if(charIndex < currentLine.length){
 
-    terminalInput.addEventListener('keydown', event => {
-      if (event.key === 'Enter') {
-        validatePassword();
-      }
-    });
+      finalText += currentLine[charIndex];
 
-    function validatePassword() {
-      if (!typingFinished) {
-        return;
-      }
+      text.textContent = finalText;
 
-      const enteredPassword = terminalInput.value.trim();
-      const isCorrect = enteredPassword === correctPassword;
+      charIndex++;
 
-      if (isCorrect) {
-        playSuccessSound();
-        showSuccessScreen();
-        return;
-      }
+      setTimeout(write,35);
 
-      attempts--;
+    }else{
 
-      if (attempts <= 0) {
-        playErrorSound();
-        showErrorScreen();
-        return;
-      }
+      finalText += '\n';
 
-      attemptsText.textContent = `[ SISTEMA ] TENTATIVAS RESTANTES: ${attempts}`;
+      text.textContent = finalText;
 
-      terminalInput.value = '';
-      terminalInput.focus();
+      lineIndex++;
+
+      charIndex = 0;
+
+      setTimeout(write,250);
     }
+  }
 
-    function showSuccessScreen() {
-      terminal.innerHTML = `
-<div class="success-screen">
-████████████████████████████████████
+  write();
+}
 
-ACESSO GARANTIDO
+function showSuccessScreen(){
 
-AUTENTICAÇÃO VALIDADA
+  typeCenterMessage([
+    '████████████████████████████████████',
+    '',
+    'ACESSO GARANTIDO',
+    '',
+    'AUTENTICAÇÃO VALIDADA',
+    '',
+    'BEM-VINDO OPERADOR',
+    '',
+    '████████████████████████████████████'
+  ],'success');
+}
 
-BEM-VINDO OPERADOR
+function showErrorScreen(){
 
-████████████████████████████████████
-</div>`;
-    }
+  typeCenterMessage([
+    '████████████████████████████████████',
+    '',
+    'ACESSO NEGADO',
+    '',
+    'FALHA DE AUTENTICAÇÃO',
+    '',
+    'SISTEMA COMPROMETIDO',
+    '',
+    '████████████████████████████████████'
+  ],'error',(container,text)=>{
 
-    function showErrorScreen() {
-      document.body.innerHTML = `
-        <div class="error-screen" id="errorScreen">
-████████████████████████████████████
+    let countdown = 10;
+
+    const interval = setInterval(()=>{
+
+      text.textContent =
+`████████████████████████████████████
+
 ACESSO NEGADO
 
 FALHA DE AUTENTICAÇÃO
 
 SISTEMA COMPROMETIDO
 
-ENCERRAMENTO EM 10 SEGUNDOS
+APAGANDO ARQUIVOS EM ${countdown}s
 
-████████████████████████████████████
-        </div>
+████████████████████████████████████`;
 
-        <div class="flashbang" id="flashbang"></div>
-        <div class="static-screen" id="staticScreen"></div>
-      `;
+      countdown--;
 
-      playErrorSound();
+      if(countdown < 0){
 
-      let countdown = 10;
+        clearInterval(interval);
 
-      const errorScreen = document.getElementById('errorScreen');
+        const flashbang =
+          document.getElementById('flashbang');
 
-      const interval = setInterval(() => {
-        countdown--;
+        const staticScreen =
+          document.getElementById('staticScreen');
 
-        errorScreen.innerHTML = `
-████████████████████████████████████
+        flashbang.style.opacity = '1';
 
-          ACESSO NEGADO
+        setTimeout(()=>{
 
-      FALHA DE AUTENTICAÇÃO
+          flashbang.style.opacity = '0';
 
-      SISTEMA COMPROMETIDO
+          container.remove();
 
-      APAGANDO ARQUIVOS EM ${countdown}s
+          staticScreen.style.opacity = '1';
 
-████████████████████████████████████
-        `;
+        },120);
 
-        if (countdown <= 0) {
-          clearInterval(interval);
+        setTimeout(()=>{
 
-          const flashbang = document.getElementById('flashbang');
-          const staticScreen = document.getElementById('staticScreen');
+          document.body.style.transition =
+            'opacity 2s ease';
 
-          flashbang.style.transition = 'opacity 0.08s ease';
-          flashbang.style.opacity = '1';
+          document.body.style.opacity = '0';
 
-          setTimeout(() => {
-            flashbang.style.opacity = '0';
+        },5000);
+      }
 
-            errorScreen.remove();
+    },1000);
 
-            staticScreen.style.opacity = '1';
-          }, 120);
+  });
+}
 
-          setTimeout(() => {
-            document.body.style.transition = 'opacity 2s ease';
-            document.body.style.opacity = '0';
-          }, 5000);
-        }
-      }, 1000);
-    }
+</script>
 
-    console.assert(correctPassword === '2201211242', 'Senha final inválida');
-    console.assert(typeof correctPassword === 'string', 'A senha deve ser string');
-    console.assert(correctPassword.length === 10, 'A senha deve ter 10 dígitos');
-    console.assert('\n'.length === 1, 'Newline inválido');
-  </script>
 </body>
 </html>
