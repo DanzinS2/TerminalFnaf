@@ -1,16 +1,437 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <title>Terminal Fleming Systems</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fleming Systems Terminal</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      min-height: 100%;
+      overflow-x: hidden;
+    }
+
+    body {
+      background: #000;
+      color: #0f0;
+      font-family: 'Courier New', monospace;
+      text-shadow: 0 0 5px #0f0;
+      display: flex;
+      justify-content: center;
+      padding: 40px 20px 80px;
+      position: relative;
+      overflow-y: auto;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(0, 255, 0, 0.06),
+        rgba(0, 255, 0, 0.06) 1px,
+        transparent 1px,
+        transparent 3px
+      );
+      opacity: 0.35;
+      z-index: 1000;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: rgba(255, 255, 255, 0.015);
+      animation: crtMove 6s linear infinite;
+      z-index: 999;
+    }
+
+    @keyframes crtMove {
+      from {
+        transform: translateY(-100%);
+      }
+
+      to {
+        transform: translateY(100%);
+      }
+    }
+
+    @keyframes blink {
+      0%, 50% {
+        opacity: 1;
+      }
+
+      51%, 100% {
+        opacity: 0;
+      }
+    }
+
+    .terminal {
+      width: 100%;
+      max-width: 900px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .content-wrapper {
+      position: relative;
+      display: flex;
+      justify-content: center;
+    }
+
+    .content-inner {
+      white-space: pre;
+      line-height: 1.7;
+      font-size: 17px;
+      text-align: center;
+      width: fit-content;
+      max-width: 100%;
+      position: relative;
+      display: inline-block;
+    }
+
+    #text {
+      display: inline;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 10px;
+      height: 20px;
+      background: #0f0;
+      vertical-align: middle;
+      animation: blink 0.8s infinite;
+      margin-left: 2px;
+    }
+
+    .auth-terminal {
+      margin-top: 40px;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .auth-title {
+      font-size: 22px;
+      margin-bottom: 22px;
+      letter-spacing: 2px;
+    }
+
+    .cmd-line {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 700px;
+      max-width: 95%;
+      padding: 14px 18px;
+      border: 2px solid #0f0;
+      background: rgba(0,0,0,0.45);
+      box-shadow: 0 0 12px rgba(0,255,0,.5), inset 0 0 18px rgba(0,255,0,.15);
+    }
+
+    .prompt {
+      color: #0f0;
+      font-size: 22px;
+      white-space: nowrap;
+    }
+
+    #terminalInput {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #0f0;
+      font-family: 'Courier New', monospace;
+      font-size: 22px;
+      text-shadow: 0 0 5px #0f0;
+      caret-color: #0f0;
+    }
+
+    #terminalInput:focus {
+      box-shadow: none;
+    }
+
+    .attempts {
+      margin-top: 18px;
+      width: 100%;
+      text-align: center;
+      font-size: 11px;
+    }
+
+    .success-screen,
+    .error-screen {
+      width: 100%;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      white-space: pre-wrap;
+      font-size: 30px;
+      line-height: 2;
+    }
+
+    .success-screen {
+      color: #0f0;
+      text-shadow: 0 0 12px #0f0;
+    }
+
+    .error-screen {
+      color: #ff2a2a;
+      text-shadow: 0 0 12px #ff0000;
+    }
+
+    @media (max-width: 768px) {
+      .content-inner {
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      .auth-box {
+        bottom: 78px;
+        width: 200px;
+      }
+
+      .password-wrapper {
+        gap: 4px;
+      }
+
+      .password-wrapper input {
+        width: 26px;
+        height: 20px;
+        font-size: 11px;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="crt-container">
-        <div class="crt">
-            <div class="screen" id="screen"></div>
+  <div class="terminal">
+    <div class="content-wrapper">
+      <div class="content-inner">
+        <span id="text"></span><span class="cursor" id="cursor"></span>
+
+        <div class="auth-terminal" id="authBox">
+          <div class="auth-title">CAMPO DE AUTENTICAÇÃO</div>
+
+          <div class="cmd-line">
+            <span class="prompt">C:\FLEMING\AUTH></span>
+
+            <input type="text" maxlength="10" inputmode="numeric" id="terminalInput" autocomplete="off" spellcheck="false" aria-label="Senha do terminal">
+          </div>
+
+          <div class="attempts" id="attemptsText">
+            [ SISTEMA ] TENTATIVAS RESTANTES: 3
+          </div>
         </div>
+      </div>
     </div>
-    <script src="script.js"></script>
+  </div>
+
+  <script>
+    const terminalText = `
+╔════════════════════════════════════════════════════════════╗
+║                    FLEMING SYSTEMS INC.                    ║
+║             DIVISÃO DE SEGURANÇA E CONTROLE DIGITAL        ║
+╚════════════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ARQUIVO...............: FS-LOCK/22A
+CLASSIFICAÇÃO.........: RESTRITO
+NÍVEL DE ACESSO.......: V
+AUTORIZAÇÃO...........: OBRIGATÓRIA
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+AVISO AO FUNCIONÁRIO:
+
+Para restaurar o acesso ao terminal principal,
+o operador deverá reconstruir a sequência numérica
+correta através dos cálculos abaixo.
+
+Todos os resultados devem ser inseridos na ordem
+em que aparecem no documento.
+
+ERROS REPETIDOS PODEM ACIONAR O BLOQUEIO DO SISTEMA.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[ EQUAÇÃO 01 ]
+
+(7 × 8) - (3² + 25)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[ EQUAÇÃO 02 ]
+
+((5³ ÷ 5²) + 14) - (3 × 6)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[ EQUAÇÃO 03 ]
+
+(√225 + 18) - (2³ + 4)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[ EQUAÇÃO 04 ]
+
+((9 × 7) - 15) ÷ 4
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[ EQUAÇÃO 05 ]
+
+((8² - 22) ÷ 2) + 21
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+                     SISTEMA AGUARDANDO AUTENTICAÇÃO
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                 FLEMING SYSTEMS — INTERNAL USE ONLY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+
+    const correctPassword = '2201211242';
+
+    const textElement = document.getElementById('text');
+    const cursor = document.getElementById('cursor');
+    const authBox = document.getElementById('authBox');
+    const attemptsText = document.getElementById('attemptsText');
+    const terminal = document.querySelector('.terminal');
+    const terminalInput = document.getElementById('terminalInput');
+
+    let currentIndex = 0;
+    let attempts = 3;
+    let typingFinished = false;
+
+    function typeWriter() {
+      if (currentIndex >= terminalText.length) {
+        typingFinished = true;
+        authBox.style.display = 'flex';
+        cursor.style.display = 'none';
+        terminalInput.focus();
+        return;
+      }
+
+      const character = terminalText[currentIndex];
+      textElement.textContent += character;
+
+      currentIndex += 1;
+
+      window.scrollTo(0, document.body.scrollHeight);
+
+      const delay = character === '\n' ? 35 : 12;
+      setTimeout(typeWriter, delay);
+    }
+
+    typeWriter();
+
+    terminalInput.addEventListener('input', () => {
+      terminalInput.value = terminalInput.value.replace(/\D/g, '');
+    });
+
+    terminalInput.addEventListener('keydown', event => {
+      if (event.key === 'Enter') {
+        validatePassword();
+      }
+    });
+
+      
+
+    function validatePassword() {
+      if (!typingFinished) {
+        return;
+      }
+
+      const enteredPassword = terminalInput.value.trim();
+
+      const isCorrect = enteredPassword === correctPassword;
+
+      if (isCorrect) {
+        showSuccessScreen();
+        return;
+      }
+
+      attempts -= 1;
+
+      authBox.animate(
+        [
+          { transform: 'translateX(-50%) translateX(0)' },
+          { transform: 'translateX(-50%) translateX(-10px)' },
+          { transform: 'translateX(-50%) translateX(10px)' },
+          { transform: 'translateX(-50%) translateX(0)' }
+        ],
+        {
+          duration: 250
+        }
+      );
+
+      if (attempts <= 0) {
+        showErrorScreen();
+        return;
+      }
+
+      attemptsText.textContent = `[ SISTEMA ] TENTATIVAS RESTANTES: ${attempts}`;
+
+      terminalInput.value = '';
+      terminalInput.focus();
+    }
+
+    function showSuccessScreen() {
+      terminal.innerHTML = `
+<div class="success-screen">
+████████████████████████████████████
+
+        ACESSO GARANTIDO
+
+      AUTENTICAÇÃO VALIDADA
+
+      BEM-VINDO OPERADOR
+
+████████████████████████████████████
+</div>`;
+    }
+
+    function showErrorScreen() {
+      terminal.innerHTML = `
+<div class="error-screen">
+████████████████████████████████████
+
+          ACESSO NEGADO
+
+      FALHA DE AUTENTICAÇÃO
+
+      ENCERRANDO TERMINAL...
+
+████████████████████████████████████
+</div>`;
+
+      setTimeout(() => {
+        document.body.style.transition = 'opacity 1.5s ease';
+        document.body.style.opacity = '0';
+      }, 2500);
+    }
+
+    console.assert(correctPassword === '2201211242', 'Senha final inválida');
+    console.assert(typeof correctPassword === 'string', 'A senha deve ser string');
+    console.assert(correctPassword.length === 10, 'A senha deve ter 10 dígitos');
+  </script>
 </body>
-</html>   
+</html>
